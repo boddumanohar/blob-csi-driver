@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -37,8 +36,20 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	mount_azure_blob "github.com/boddumanohar/blobfuse-proxy/pb"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
+
+type MountClient struct {
+	service mount_azure_blob.MountServiceClient
+}
+
+// NewLaptopClient returns a new laptop client
+func NewMountClient(cc *grpc.ClientConn) *MountClient {
+	service := mount_azure_blob.NewMountServiceClient(cc)
+	return &MountClient{service}
+}
 
 // NodePublishVolume mount the volume from staging to target path
 func (d *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -162,7 +173,7 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 		}
 	}
 
-	accountName, containerName, authEnv, err := d.GetAuthEnv(ctx, volumeID, protocol, attrib, secrets)
+	accountName, containerName, authEnv, accountKey, err := d.GetAuthEnv(ctx, volumeID, protocol, attrib, secrets)
 	if err != nil {
 		return nil, err
 	}
@@ -213,13 +224,32 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 
 	klog.V(2).Infof("target %v\nprotocol %v\n\nvolumeId %v\ncontext %v\nmountflags %v\nmountOptions %v\nargs %v\nserverAddress %v",
 		targetPath, protocol, volumeID, attrib, mountFlags, mountOptions, args, serverAddress)
-	cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
+	// cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
 
-	cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+accountName)
-	cmd.Env = append(cmd.Env, "AZURE_STORAGE_BLOB_ENDPOINT="+serverAddress)
-	cmd.Env = append(cmd.Env, authEnv...)
+	// cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+accountName)
+	// cmd.Env = append(cmd.Env, "AZURE_STORAGE_BLOB_ENDPOINT="+serverAddress)
+	// cmd.Env = append(cmd.Env, authEnv...)
 
-	output, err := cmd.CombinedOutput()
+	serverAddress := "localhost:8080"
+
+	transportOption := grpc.WithInsecure()
+
+	cc1, err := grpc.Dial(serverAddress, transportOption)
+	if err != nil {
+		klog.V(2).Info("cannot dial server: ", err)
+	}
+
+	mountClient := NewMountClient(cc1)
+	req := mount_azure_blob.MountAzureBlobRequest{
+		TargetPath:    targetPath,
+		AccountName:   accountName,
+		ContainerName: containerName,
+		AccountKey:    accountKey,
+		TmpPath:       tmpPath,
+	}
+	mountClient.service.MountAzureBlob(context.TODO(), &req)
+
+	// output, err := cmd.CombinedOutput()
 	if err != nil {
 		err = fmt.Errorf("Mount failed with error: %v, output: %v", err, string(output))
 		klog.Errorf("%v", err)

@@ -6,18 +6,19 @@ require (
 	github.com/Azure/azure-sdk-for-go v49.1.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.1
 	github.com/Azure/go-autorest/autorest/adal v0.9.5
+	github.com/boddumanohar/blobfuse-proxy v0.0.0-20210214100712-d49f906ae287
 	github.com/container-storage-interface/spec v1.3.0
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.4.3
 	github.com/imdario/mergo v0.3.9 // indirect
-	github.com/kubernetes-csi/csi-lib-utils v0.7.0
+	github.com/kubernetes-csi/csi-lib-utils v0.9.1
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-toml v1.2.0
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
-	google.golang.org/grpc v1.28.0
+	google.golang.org/grpc v1.35.0
 	k8s.io/api v0.20.0
 	k8s.io/apimachinery v0.20.0
 	k8s.io/client-go v0.20.0

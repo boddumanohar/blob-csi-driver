@@ -211,7 +211,7 @@ func isSASToken(key string) bool {
 }
 
 // GetAuthEnv return <accountName, containerName, authEnv, error>
-func (d *Driver) GetAuthEnv(ctx context.Context, volumeID, protocol string, attrib, secrets map[string]string) (string, string, []string, error) {
+func (d *Driver) GetAuthEnv(ctx context.Context, volumeID, protocol string, attrib, secrets map[string]string) (string, string, []string, string, error) {
 	rgName, accountName, containerName, err := GetContainerInfo(volumeID)
 	if err != nil {
 		// ignore volumeID parsing error
@@ -264,7 +264,7 @@ func (d *Driver) GetAuthEnv(ctx context.Context, volumeID, protocol string, attr
 
 	if protocol == nfs {
 		// nfs protocol does not need account key, return directly
-		return accountName, containerName, authEnv, err
+		return accountName, containerName, authEnv, accountKey, err
 	}
 
 	// 1. If keyVaultURL is not nil, preferentially use the key stored in key vault.
@@ -273,7 +273,7 @@ func (d *Driver) GetAuthEnv(ctx context.Context, volumeID, protocol string, attr
 	if keyVaultURL != "" {
 		key, err := d.getKeyVaultSecretContent(ctx, keyVaultURL, keyVaultSecretName, keyVaultSecretVersion)
 		if err != nil {
-			return accountName, containerName, authEnv, err
+			return accountName, containerName, authEnv, accountKey, err
 		}
 		if isSASToken(key) {
 			accountSasToken = key
@@ -291,7 +291,7 @@ func (d *Driver) GetAuthEnv(ctx context.Context, volumeID, protocol string, attr
 				}
 				accountKey, err = d.cloud.GetStorageAccesskey(accountName, rgName)
 				if err != nil {
-					return accountName, containerName, authEnv, fmt.Errorf("no key for storage account(%s) under resource group(%s), err %v", accountName, rgName, err)
+					return accountName, containerName, authEnv, accountKey, fmt.Errorf("no key for storage account(%s) under resource group(%s), err %v", accountName, rgName, err)
 				}
 			}
 		} else {
@@ -328,7 +328,7 @@ func (d *Driver) GetAuthEnv(ctx context.Context, volumeID, protocol string, attr
 		authEnv = append(authEnv, "AZURE_STORAGE_ACCESS_KEY="+accountKey)
 	}
 
-	return accountName, containerName, authEnv, err
+	return accountName, containerName, authEnv, accountKey, err
 }
 
 // GetStorageAccountAndContainer get storage account and container info

@@ -428,7 +428,7 @@ func TestGetAuthEnv(t *testing.T) {
 					RawError: fmt.Errorf("test"),
 				}
 				mockStorageAccountsClient.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any()).Return(accountListKeysResult, rerr).AnyTimes()
-				_, _, _, err := d.GetAuthEnv(context.TODO(), volumeID, "", attrib, secret)
+				_, _, _, _, err := d.GetAuthEnv(context.TODO(), volumeID, "", attrib, secret)
 				expectedErr := fmt.Errorf("no key for storage account(storageaccountname) under resource group(rg), err Retriable: false, RetryAfter: 0s, HTTPStatusCode: 0, RawError: test")
 				if !reflect.DeepEqual(err, expectedErr) {
 					t.Errorf("actualErr: (%v), expectedErr: (%v)", err, expectedErr)
@@ -457,7 +457,7 @@ func TestGetAuthEnv(t *testing.T) {
 					Keys: &accountkeylist,
 				}
 				mockStorageAccountsClient.EXPECT().ListKeys(gomock.Any(), gomock.Any(), gomock.Any()).Return(list, nil).AnyTimes()
-				_, _, _, err := d.GetAuthEnv(context.TODO(), volumeID, "", attrib, secret)
+				_, _, _, _, err := d.GetAuthEnv(context.TODO(), volumeID, "", attrib, secret)
 				expectedErr := error(nil)
 				if !reflect.DeepEqual(err, expectedErr) {
 					t.Errorf("actualErr: (%v), expectedErr: (%v)", err, expectedErr)
@@ -478,7 +478,7 @@ func TestGetAuthEnv(t *testing.T) {
 				secret["azurestorageaccountsastoken"] = "unit-test"
 				secret["msisecret"] = "unit-test"
 				secret["azurestoragespnclientsecret"] = "unit-test"
-				accountName, containerName, _, err := d.GetAuthEnv(context.TODO(), volumeID, "", attrib, secret)
+				accountName, containerName, _, _, err := d.GetAuthEnv(context.TODO(), volumeID, "", attrib, secret)
 				if err != nil {
 					t.Errorf("actualErr: (%v), expectedErr: nil", err)
 				}
@@ -495,7 +495,7 @@ func TestGetAuthEnv(t *testing.T) {
 				volumeID := "unique-volumeid"
 				attrib[storageAccountField] = "accountname"
 				attrib[containerNameField] = "containername"
-				accountName, containerName, authEnv, err := d.GetAuthEnv(context.TODO(), volumeID, nfs, attrib, secret)
+				accountName, containerName, authEnv, _, err := d.GetAuthEnv(context.TODO(), volumeID, nfs, attrib, secret)
 				if err != nil {
 					t.Errorf("actualErr: (%v), expect no error", err)
 				}
