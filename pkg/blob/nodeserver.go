@@ -173,7 +173,7 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 		}
 	}
 
-	accountName, containerName, authEnv, accountKey, err := d.GetAuthEnv(ctx, volumeID, protocol, attrib, secrets)
+	accountName, containerName, _, accountKey, err := d.GetAuthEnv(ctx, volumeID, protocol, attrib, secrets)
 	if err != nil {
 		return nil, err
 	}
@@ -224,34 +224,28 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 
 	klog.V(2).Infof("target %v\nprotocol %v\n\nvolumeId %v\ncontext %v\nmountflags %v\nmountOptions %v\nargs %v\nserverAddress %v",
 		targetPath, protocol, volumeID, attrib, mountFlags, mountOptions, args, serverAddress)
-	// cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
 
-	// cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+accountName)
-	// cmd.Env = append(cmd.Env, "AZURE_STORAGE_BLOB_ENDPOINT="+serverAddress)
-	// cmd.Env = append(cmd.Env, authEnv...)
-
-	serverAddress := "localhost:8080"
-
+	blobfuseProxyEndpoint := "unix:///var/lib/kubelet/plugins/blobfuseproxy.sock"
 	transportOption := grpc.WithInsecure()
 
-	cc1, err := grpc.Dial(serverAddress, transportOption)
+	klog.V(2).Infof("NodeStageVolume: sending GRPC call to blobfuseproxy")
+	cc1, err := grpc.Dial(blobfuseProxyEndpoint, transportOption)
 	if err != nil {
 		klog.V(2).Info("cannot dial server: ", err)
 	}
-
 	mountClient := NewMountClient(cc1)
-	req := mount_azure_blob.MountAzureBlobRequest{
+	mountreq := mount_azure_blob.MountAzureBlobRequest{
 		TargetPath:    targetPath,
 		AccountName:   accountName,
 		ContainerName: containerName,
 		AccountKey:    accountKey,
 		TmpPath:       tmpPath,
 	}
-	mountClient.service.MountAzureBlob(context.TODO(), &req)
-
-	// output, err := cmd.CombinedOutput()
+	mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
+	klog.V(2).Infof("NodeStageVolume: blobfuseproxy returned.")
+	// TODO: handle error returned by the mount service
 	if err != nil {
-		err = fmt.Errorf("Mount failed with error: %v, output: %v", err, string(output))
+		// err = fmt.Errorf("Mount failed with error: %v, output: %v", err, string(output))
 		klog.Errorf("%v", err)
 		notMnt, mntErr := d.mounter.IsLikelyNotMountPoint(targetPath)
 		if mntErr != nil {
