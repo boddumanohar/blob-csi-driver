@@ -241,7 +241,7 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 		AccountKey:    accountKey,
 		TmpPath:       tmpPath,
 	}
-	mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
+	_, err = mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
 	klog.V(2).Infof("NodeStageVolume: blobfuseproxy returned.")
 	// TODO: handle error returned by the mount service
 	if err != nil {
