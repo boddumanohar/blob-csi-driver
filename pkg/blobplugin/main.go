@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/blob-csi-driver/pkg/blob"
+	csicommon "sigs.k8s.io/blob-csi-driver/pkg/csi-common"
 
 	"k8s.io/component-base/metrics/legacyregistry"
 	"k8s.io/klog/v2"
@@ -36,11 +37,12 @@ func init() {
 }
 
 var (
-	endpoint       = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	nodeID         = flag.String("nodeid", "", "node id")
-	version        = flag.Bool("version", false, "Print the version and exit.")
-	metricsAddress = flag.String("metrics-address", "0.0.0.0:29634", "export the metrics")
-	kubeconfig     = flag.String("kubeconfig", "", "Absolute path to the kubeconfig file. Required only when running out of cluster.")
+	endpoint              = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
+	blobfuseProxyEndpoint = flag.String("blobfuse-proxy-endpoint", "unix://var/lib/kubelet/plugins/blobfuseproxy.sock", "CSI endpoint")
+	nodeID                = flag.String("nodeid", "", "node id")
+	version               = flag.Bool("version", false, "Print the version and exit.")
+	metricsAddress        = flag.String("metrics-address", "0.0.0.0:29634", "export the metrics")
+	kubeconfig            = flag.String("kubeconfig", "", "Absolute path to the kubeconfig file. Required only when running out of cluster.")
 )
 
 func main() {
@@ -60,8 +62,24 @@ func main() {
 	os.Exit(0)
 }
 
+func getBlobFuseAddress(endpoint string) string {
+	proto, addr, err := csicommon.ParseEndpoint(endpoint)
+	if err != nil {
+		klog.Fatal(err.Error())
+	}
+
+	if proto == "unix" {
+		addr = "/" + addr
+		if err := os.Remove(addr); err != nil && !os.IsNotExist(err) {
+			klog.Fatalf("Failed to remove %s, error: %s", addr, err.Error())
+		}
+	}
+	return addr
+}
+
 func handle() {
-	driver := blob.NewDriver(*nodeID)
+	blobfuseAddr := getBlobFuseAddress(*blobfuseProxyEndpoint)
+	driver := blob.NewDriver(*nodeID, blobfuseAddr)
 	if driver == nil {
 		klog.Fatalln("Failed to initialize Azure Blob Storage CSI driver")
 	}
