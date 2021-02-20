@@ -6,7 +6,6 @@ require (
 	github.com/Azure/azure-sdk-for-go v49.1.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.1
 	github.com/Azure/go-autorest/autorest/adal v0.9.5
-	github.com/boddumanohar/blobfuse-proxy v0.0.0-20210214100712-d49f906ae287
 	github.com/container-storage-interface/spec v1.3.0
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.4.3
