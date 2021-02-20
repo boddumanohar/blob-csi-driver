@@ -37,9 +37,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	mount_azure_blob "github.com/boddumanohar/blobfuse-proxy/pb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	mount_azure_blob "sigs.k8s.io/blob-csi-driver/pkg/blobfuse-proxy/pb"
 )
 
 type MountClient struct {
@@ -227,35 +227,31 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 		targetPath, protocol, volumeID, attrib, mountFlags, mountOptions, args, serverAddress)
 
 	transportOption := grpc.WithInsecure()
-	useBlobfuseProxy := true
 	var output []byte
-	klog.V(2).Infof("NodeStageVolume: sending GRPC call to blobfuseproxy")
+
 	cc1, err := grpc.Dial("unix://"+d.blobfuseProxyEndpoint, transportOption)
 	if err != nil {
-		klog.Warningf("cannot dial blobfuse proxy at the given address: unix://", d.blobfuseProxyEndpoint, err)
-		klog.Warningf("falling back to the nodeserver based mount")
-		useBlobfuseProxy = false
+		klog.Warningf("cannot dial blobfuse proxy at the given address: unix://%v %v \nfalling back to the nodeserver based mount", d.blobfuseProxyEndpoint, err)
 	}
 
-	if useBlobfuseProxy {
-		mountClient := NewMountClient(cc1)
-		mountreq := mount_azure_blob.MountAzureBlobRequest{
-			TargetPath:    targetPath,
-			AccountName:   accountName,
-			ContainerName: containerName,
-			AccountKey:    accountKey,
-			TmpPath:       tmpPath,
-		}
-		// TODO: handle error returned by the mount service
-		_, err = mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
-		klog.V(2).Infof("NodeStageVolume: blobfuseproxy returned.")
-	} else {
-		cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
-		cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+accountName)
-		cmd.Env = append(cmd.Env, "AZURE_STORAGE_BLOB_ENDPOINT="+serverAddress)
-		cmd.Env = append(cmd.Env, authEnv...)
-		output, err = cmd.CombinedOutput()
+	mountClient := NewMountClient(cc1)
+	mountreq := mount_azure_blob.MountAzureBlobRequest{
+		TargetPath:    targetPath,
+		AccountName:   accountName,
+		ContainerName: containerName,
+		AccountKey:    accountKey,
+		TmpPath:       tmpPath,
 	}
+
+	// TODO: handle error returned by the mount service
+	_, err = mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
+	klog.V(2).Infof("NodeStageVolume: blobfuseproxy returned.")
+	// if there its a gRPC connection error, then fallback to nodeserver based mount
+	cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
+	cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+accountName)
+	cmd.Env = append(cmd.Env, "AZURE_STORAGE_BLOB_ENDPOINT="+serverAddress)
+	cmd.Env = append(cmd.Env, authEnv...)
+	output, err = cmd.CombinedOutput()
 
 	if err != nil {
 		err = fmt.Errorf("Mount failed with error: %v, output: %v", err, string(output))
