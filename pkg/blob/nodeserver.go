@@ -229,9 +229,9 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 	transportOption := grpc.WithInsecure()
 	var output []byte
 
-	cc1, err := grpc.Dial(d.blobfuseProxyEndpoint, transportOption)
+	conn, err := grpc.Dial(d.blobfuseProxyEndpoint, transportOption)
 	if err != nil {
-		klog.Warningf("cannot dial blobfuse proxy at the given address: unix://%v %v \nfalling back to the nodeserver based mount", d.blobfuseProxyEndpoint, err)
+		klog.Warningf("cannot dial blobfuse proxy at address: %v error: %v \nfalling back to the nodeserver based mount", d.blobfuseProxyEndpoint, err)
 		// fall back to normal mount if blobfuse proxy is not cannot start
 		cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
 		cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+accountName)
@@ -239,7 +239,7 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 		cmd.Env = append(cmd.Env, authEnv...)
 		output, err = cmd.CombinedOutput()
 	} else {
-		mountClient := NewMountClient(cc1)
+		mountClient := NewMountClient(conn)
 		mountreq := mount_azure_blob.MountAzureBlobRequest{
 			TargetPath:    targetPath,
 			AccountName:   accountName,
@@ -247,7 +247,7 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 			AccountKey:    accountKey,
 			TmpPath:       tmpPath,
 		}
-		// TODO: handle error returned by the mount service
+		klog.Errorln("calling BlobfuseProxy: MountAzureBlob function")
 		_, err = mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
 	}
 
