@@ -30,6 +30,14 @@ import (
 	mount_azure_blob "sigs.k8s.io/blob-csi-driver/pkg/blobfuse-proxy/pb"
 )
 
+func init() {
+	_ = flag.Set("logtostderr", "true")
+}
+
+var (
+	blobfuseProxyEndpoint = flag.String("blobfuse-proxy-endpoint", "unix://tmp/blobfuse-proxy.sock", "blobfuse-proxy endpoint")
+)
+
 type MountServer struct {
 	mount_azure_blob.UnimplementedMountServiceServer
 }
@@ -48,7 +56,7 @@ func (server *MountServer) MountAzureBlob(ctx context.Context,
 	resp = &mount_azure_blob.MountAzureBlobResponse{Err: ""}
 	args := fmt.Sprintf("%s --tmp-path=%s --container-name=%s", req.GetTargetPath(), req.GetTmpPath(), req.GetContainerName())
 	cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
-	// todo: take mount args being passed from storage class
+	// TODO: take mount args being passed from storage class
 
 	cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+req.GetAccountName())
 	cmd.Env = append(cmd.Env, "AZURE_STORAGE_ACCESS_KEY="+req.GetAccountKey())
@@ -87,9 +95,8 @@ func parseEndpoint(ep string) (string, string, error) {
 }
 
 func main() {
-	endpoint := flag.String("endpoint", "unix://var/lib/kubelet/plugins/blobfuseproxy.sock", "CSI endpoint")
 	flag.Parse()
-	proto, addr, err := parseEndpoint(*endpoint)
+	proto, addr, err := parseEndpoint(*blobfuseProxyEndpoint)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

@@ -37,7 +37,7 @@ func init() {
 
 var (
 	endpoint              = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	blobfuseProxyEndpoint = flag.String("blobfuse-proxy-endpoint", "unix://var/lib/kubelet/plugins/blobfuseproxy.sock", "CSI endpoint")
+	blobfuseProxyEndpoint = flag.String("blobfuse-proxy-endpoint", "unix://tmp/blobfuse-proxy.sock", "blobfuse-proxy endpoint")
 	nodeID                = flag.String("nodeid", "", "node id")
 	version               = flag.Bool("version", false, "Print the version and exit.")
 	metricsAddress        = flag.String("metrics-address", "0.0.0.0:29634", "export the metrics")
