@@ -27,7 +27,7 @@ RUN wget -O /tmp/packages-microsoft-prod.deb https://packages.microsoft.com/conf
     && dpkg -i /tmp/packages-microsoft-prod.deb \
     && apt-get update \
     && apt install blobfuse fuse -y \
-    && rm -f /tmp/packages-microsoft-prod.deb
-RUN apt remove wget -y
+    && rm -f /tmp/packages-microsoft-prod.deb \
+    && apt remove wget -y
 
 ENTRYPOINT ["/blobfuse-proxy"]

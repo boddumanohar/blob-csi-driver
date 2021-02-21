@@ -52,18 +52,17 @@ func (server *MountServer) MountAzureBlob(ctx context.Context,
 	req *mount_azure_blob.MountAzureBlobRequest,
 ) (resp *mount_azure_blob.MountAzureBlobResponse, err error) {
 
-	log.Printf("received request: Mounting the container %s to the path %s \n", req.GetContainerName(), req.GetTargetPath())
-	resp = &mount_azure_blob.MountAzureBlobResponse{Err: ""}
-	args := fmt.Sprintf("%s --tmp-path=%s --container-name=%s", req.GetTargetPath(), req.GetTmpPath(), req.GetContainerName())
-	cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
-	// TODO: take mount args being passed from storage class
+	args := req.GetMountArgs()
+	log.Printf("received mount request: Mounting with args %v \n", args)
 
+	cmd := exec.Command("blobfuse", strings.Split(args, " ")...)
 	cmd.Env = append(os.Environ(), "AZURE_STORAGE_ACCOUNT="+req.GetAccountName())
 	cmd.Env = append(cmd.Env, "AZURE_STORAGE_ACCESS_KEY="+req.GetAccountKey())
-	err = cmd.Run()
+	cmd.Env = append(cmd.Env, req.GetAuthEnv()...)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Println("blobfuse mount failed")
-		resp.Err = err.Error()
+		resp.Output = string(output)
 		return resp, err
 	}
 	log.Println("successfully mounted")

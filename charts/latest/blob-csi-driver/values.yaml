@@ -19,6 +19,10 @@ image:
     repository: mcr.microsoft.com/oss/kubernetes-csi/csi-resizer
     tag: v1.1.0
     pullPolicy: IfNotPresent
+  blobfuseproxy:
+    repository: bmanu199/blobfuse-proxy
+    tag: latest
+    pullPolicy: IfNotPresent
 
 ## Reference to one or more secrets to be used when pulling images
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/

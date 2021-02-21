@@ -241,14 +241,16 @@ func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRe
 	} else {
 		mountClient := NewMountClient(conn)
 		mountreq := mount_azure_blob.MountAzureBlobRequest{
-			TargetPath:    targetPath,
-			AccountName:   accountName,
-			ContainerName: containerName,
-			AccountKey:    accountKey,
-			TmpPath:       tmpPath,
+			AccountName: accountName,
+			AccountKey:  accountKey,
+			MountArgs:   args,
+			AuthEnv:     authEnv,
 		}
 		klog.Errorln("calling BlobfuseProxy: MountAzureBlob function")
-		_, err = mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
+		resp, err := mountClient.service.MountAzureBlob(context.TODO(), &mountreq)
+		if err != nil {
+			output = []byte(resp.Output)
+		}
 	}
 
 	if err != nil {

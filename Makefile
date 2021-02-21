@@ -155,7 +155,6 @@ gen-proto:
 clean-proto:
 	rm pkg/blobfuse-proxy/pb/*.go
 
-# clean the files generated from .proto file
 .PHONY: blobfuse-proxy
 blobfuse-proxy:
 	CGO_ENABLED=0 GOOS=linux go build -mod vendor -o _output/blobfuse-proxy ./pkg/blobfuse-proxy
@@ -163,3 +162,7 @@ blobfuse-proxy:
 .PHONY: blobfuse-proxy-container
 blobfuse-proxy-container:
 	sudo docker build -t blobfuse-proxy -f pkg/blobfuse-proxy/Dockerfile .
+
+.PHONY: install-protoc
+install-protoc:
+	./hack/install_protoc.sh

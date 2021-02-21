@@ -39,4 +39,5 @@ kubectl apply -f $repo/rbac-csi-blob-node.yaml
 kubectl apply -f $repo/csi-blob-driver.yaml
 kubectl apply -f $repo/csi-blob-controller.yaml
 kubectl apply -f $repo/csi-blob-node.yaml
+kubectl apply -f $repo/blobfuse-proxy.yaml
 echo 'Azure Blob Storage CSI driver installed successfully.'
