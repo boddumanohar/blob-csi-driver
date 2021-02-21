@@ -15,7 +15,6 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-      serviceAccountName: csi-blobfuse-proxy-sa
       nodeSelector:
         kubernetes.io/os: linux
       affinity:
@@ -35,11 +34,10 @@ spec:
           image: bmanu199/blobfuse-proxy:latest
           imagePullPolicy: IfNotPresent
           args:
-            - "--v=5"
             - "--blobfuse-proxy-endpoint=$(BLOBFUSE_PROXY_ENDPOINT)"
           env:
             - name: BLOBFUSE_PROXY_ENDPOINT
-              value: unix:///csi/blobfuse-proxy.sock
+              value: unix://csi/blobfuse-proxy.sock
           securityContext:
             privileged: true
           volumeMounts:
