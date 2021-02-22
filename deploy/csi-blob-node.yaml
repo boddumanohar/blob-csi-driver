@@ -109,7 +109,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
             - name: BLOBFUSE_PROXY_ENDPOINT
-              value: unix://csi/blobfuse-proxy.sock
+              value: unix:///csi/blobfuse-proxy.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
