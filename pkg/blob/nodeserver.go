@@ -46,7 +46,7 @@ type MountClient struct {
 	service mount_azure_blob.MountServiceClient
 }
 
-// NewLaptopClient returns a new laptop client
+// NewMountClient returns a new mount client
 func NewMountClient(cc *grpc.ClientConn) *MountClient {
 	service := mount_azure_blob.NewMountServiceClient(cc)
 	return &MountClient{service}
