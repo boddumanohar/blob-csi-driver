@@ -1,3 +1,4 @@
+# This is to be used in e2e test, while for production, we suggest install this proxy as a standalone process
 ---
 kind: DaemonSet
 apiVersion: apps/v1
